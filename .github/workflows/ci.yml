@@ -56,18 +56,26 @@ jobs:
           sudo apt-get install -y mysql-client
 
 
-      - name: Wait for MySQL to be healthy
+      - name: Wait for MySQL
         run: |
-          echo "Waiting for MySQL service health..."
-          while ! docker inspect --format='{{.State.Health.Status}}' mysql | grep -q healthy; do
-            sleep 2
+          for i in {1..20}; do
+            if mysqladmin ping -hmysql -uroot -p"${{ secrets.DB_ROOT_PASSWORD }}" --silent; then
+              echo "MySQL is ready"
+              break
+            fi
+            echo "Waiting for MySQL..."
+            sleep 5
           done
-          echo "MySQL is healthy!"
-
       - name: Wait for Redis
         run: |
-          # Attendre Redis
-          ./wait-for-it.sh redis:6379 --timeout=60 --strict -- echo "Redis ready"
+          for i in {1..20}; do
+            if nc -z redis 6379; then
+              echo "Redis is ready"
+              break
+            fi
+            echo "Waiting for Redis..."
+            sleep 2
+          done
 
       - name: Run tests
         run: |
