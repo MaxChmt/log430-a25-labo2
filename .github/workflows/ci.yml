@@ -17,7 +17,7 @@ jobs:
           MYSQL_USER: labo02
           MYSQL_PASSWORD: ${{ secrets.DB_PASS }}
         options: >-
-          --health-cmd="mysqladmin ping -uroot -p${{ secrets.DB_ROOT_PASSWORD }} --silent"
+          --health-cmd="mysqladmin ping -uroot -p${DB_ROOT_PASSWORD} --silent"
           --health-interval=10s
           --health-timeout=5s
           --health-retries=10
