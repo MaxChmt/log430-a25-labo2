@@ -17,6 +17,7 @@ jobs:
           MYSQL_DATABASE: labo02_db
           MYSQL_USER: labo02
           MYSQL_PASSWORD: ${{ secrets.DB_PASS }}
+          MYSQL_ALLOW_EMPTY_PASSWORD: "yes"
         ports:
           - 3306:3306
 
