@@ -19,7 +19,7 @@ def show_highest_spending_users():
         <p>Voici les utilisateurs ayant dépensé le plus d'argent (tous temps confondus) :</p>
         <table class="table">
             <tr>
-                <th>ID Utilisateur</th>
+                <th>Utilisateur</th>
                 <th>Total Dépensé</th>
             </tr>
             {rows}
