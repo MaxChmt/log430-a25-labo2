@@ -10,6 +10,10 @@ import redis
 import config
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
+from dotenv import load_dotenv
+
+
+load_dotenv()
 
 def get_mysql_conn():
     """Get a MySQL connection using env variables"""
@@ -44,3 +48,4 @@ def wait_for_mysql(max_retries=5, delay=3):
             print(f"[DEBUG] Tentative {attempt}: MySQL pas prêt ({e}), retry dans {delay}s")
             time.sleep(delay)
     raise Exception("Impossible de se connecter à MySQL après plusieurs tentatives")
+
