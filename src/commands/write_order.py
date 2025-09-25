@@ -119,7 +119,6 @@ def delete_order_from_redis(order_id):
 
 def sync_all_orders_to_redis():
     """ Sync orders from MySQL to Redis """
-    # redis
     r = get_redis_conn()
     orders_in_redis = r.keys(f"order:*")
     rows_added = 0

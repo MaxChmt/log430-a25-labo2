@@ -30,6 +30,7 @@ def get_orders_from_redis(limit=9999):
 
 def get_highest_spending_users():
     """Get report of best spender users"""
+    user_map = {1: "Ada Lovelace", 2: "Adele Goldberg", 3: "Alan Turing"}
     r = get_redis_conn()
     expenses_by_user = defaultdict(float)
     order_keys = sorted(r.keys("order:*"), reverse=True)
@@ -37,7 +38,7 @@ def get_highest_spending_users():
     for key in order_keys:
         orders.append(r.hgetall(key))
     for order in orders:
-        expenses_by_user[order['user_id']] += float(order['total_amount'])
+        expenses_by_user[user_map.get(int(order['user_id']))] += float(order['total_amount'])
     highest_spending_users = sorted(expenses_by_user.items(), key=lambda item: item[1], reverse=True)
     return highest_spending_users
 
