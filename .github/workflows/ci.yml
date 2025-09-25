@@ -61,6 +61,9 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y mysql-client
 
+      - name: Copy .env into src
+        run: cp .env src/.env
+        
       - name: Run tests
         run: |
           cd src
