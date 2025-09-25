@@ -61,6 +61,10 @@ jobs:
           echo "Waiting for MySQL"
           sleep 15
 
+      - name: Initialize database schema
+        run: |
+          mysql --protocol=tcp -h 127.0.0.1 -uroot -p${{ secrets.DB_ROOT_PASSWORD }} labo02_db < db-init/init.sql
+
       - name: Run tests
         run: |
           cd src
