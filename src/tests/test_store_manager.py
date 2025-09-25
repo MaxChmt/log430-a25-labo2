@@ -5,10 +5,11 @@ Auteurs : Gabriel C. Ullmann, Fabio Petrillo, 2025
 """
 from commands.write_order import sync_all_orders_to_redis
 from controllers.order_controller import create_order, remove_order
-from db import get_redis_conn
+from db import get_redis_conn, wait_for_mysql
 from views.report_view import show_highest_spending_users, show_best_sellers
 
-def test_sync_all_orders_to_redis():     
+def test_sync_all_orders_to_redis():
+    wait_for_mysql(max_retries=5, delay=3)    
     orders_added = sync_all_orders_to_redis()
     assert orders_added > 0
 
