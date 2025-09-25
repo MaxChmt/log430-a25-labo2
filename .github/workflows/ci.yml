@@ -16,6 +16,8 @@ jobs:
           MYSQL_DATABASE: labo02_db
           MYSQL_USER: labo02
           MYSQL_PASSWORD: ${{ secrets.DB_PASS }}
+        ports:
+          - 3306:3306
         options: >-
           --health-cmd="mysqladmin ping -uroot -p$MYSQL_ROOT_PASSWORD --silent"
           --health-interval=10s
@@ -60,7 +62,7 @@ jobs:
           echo "Attente MySQL et Redis..."
           sleep 15
 
-          
+
       - name: Run tests
         run: |
           cd src 
