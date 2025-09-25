@@ -3,11 +3,13 @@ Orders (write-only model)
 SPDX - License - Identifier: LGPL - 3.0 - or -later
 Auteurs : Gabriel C. Ullmann, Fabio Petrillo, 2025
 """
+from datetime import datetime
+from decimal import Decimal
 from models.product import Product
 from models.order_item import OrderItem
 from models.order import Order
 from queries.read_order import get_orders_from_mysql
-from db import get_sqlalchemy_session, get_redis_conn
+from db import get_mysql_conn, get_sqlalchemy_session, get_redis_conn
 
 def add_order(user_id: int, items: list):
     """Insert order with items in MySQL, keep Redis in sync"""
@@ -63,10 +65,7 @@ def add_order(user_id: int, items: list):
             session.add(order_item)
 
         session.commit()
-
-        # TODO: ajouter la commande à Redis
-        add_order_to_redis(order_id, user_id, total_amount, items)
-
+        add_order_to_redis(order_id, user_id, total_amount, order_items_data)
         return order_id
 
     except Exception as e:
@@ -84,8 +83,6 @@ def delete_order(order_id: int):
         if order:
             session.delete(order)
             session.commit()
-
-            # TODO: supprimer la commande à Redis
             delete_order_from_redis(order_id)
             return 1  
         else:
@@ -100,11 +97,25 @@ def delete_order(order_id: int):
 def add_order_to_redis(order_id, user_id, total_amount, items):
     """Insert order to Redis"""
     r = get_redis_conn()
-    print(r)
+    order_data = {
+        "id": order_id,
+        "user_id": user_id,
+        "total_amount": float(total_amount),
+        "created_at": datetime.now().isoformat()
+    }
+    r.hset(f"order:{order_id}", mapping=order_data)
+    print(f"[DEBUG] Order {order_id} added to Redis", flush=True)
+
+    for item in items:
+        product_id = item.get('product_id')
+        quantity = int(item.get('quantity', 0))
+        if product_id is not None and quantity > 0:
+            r.incr(f"product:{product_id}", quantity)
 
 def delete_order_from_redis(order_id):
     """Delete order from Redis"""
-    pass
+    r = get_redis_conn()
+    r.delete(f"order:{order_id}")
 
 def sync_all_orders_to_redis():
     """ Sync orders from MySQL to Redis """
@@ -114,11 +125,21 @@ def sync_all_orders_to_redis():
     rows_added = 0
     try:
         if len(orders_in_redis) == 0:
-            # mysql
-            orders_from_mysql = []
+            mysql_conn = get_mysql_conn()
+            cursor = mysql_conn.cursor(dictionary=True)
+            cursor.execute("SELECT * FROM orders")
+            orders_from_mysql = cursor.fetchall()
             for order in orders_from_mysql:
-                # TODO: terminez l'implementation
-                print(order)
+                order_id = order['id']
+                order_to_store = {}
+                for k, v in order.items():
+                    if isinstance(v, Decimal):
+                        order_to_store[k] = float(v)
+                    elif isinstance(v, datetime):
+                        order_to_store[k] = v.isoformat()
+                    else:
+                        order_to_store[k] = v
+                r.hset(f"order:{order_id}", mapping=order_to_store)
             rows_added = len(orders_from_mysql)
         else:
             print('Redis already contains orders, no need to sync!')
@@ -127,3 +148,16 @@ def sync_all_orders_to_redis():
         return 0
     finally:
         return len(orders_in_redis) + rows_added
+    
+def sync_products_to_redis():
+    """Resynchroniser les quantités vendues dans Redis à partir de MySQL"""
+    r = get_redis_conn()
+    session = get_sqlalchemy_session()
+    for key in r.keys("product:*"):
+        r.delete(key)
+
+    order_items = session.query(OrderItem).all()
+    for item in order_items:
+        r.incr(f"product:{item.product_id}", int(item.quantity))
+
+    session.close()

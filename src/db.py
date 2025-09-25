@@ -4,6 +4,7 @@ SPDX - License - Identifier: LGPL - 3.0 - or -later
 Auteurs : Gabriel C. Ullmann, Fabio Petrillo, 2025
 """
 
+import time
 import mysql.connector
 import redis
 import config
@@ -31,3 +32,15 @@ def get_sqlalchemy_session():
     engine = create_engine(connection_string)
     Session = sessionmaker(bind=engine)
     return Session()
+
+def wait_for_mysql(max_retries=5, delay=3):
+    for attempt in range(1, max_retries + 1):
+        try:
+            conn = get_mysql_conn()
+            conn.close()
+            print("[DEBUG] MySQL prêt")
+            return
+        except Exception as e:
+            print(f"[DEBUG] Tentative {attempt}: MySQL pas prêt ({e}), retry dans {delay}s")
+            time.sleep(delay)
+    raise Exception("Impossible de se connecter à MySQL après plusieurs tentatives")
