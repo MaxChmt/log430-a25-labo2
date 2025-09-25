@@ -55,28 +55,6 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y mysql-client
 
-
-      - name: Wait for MySQL
-        run: |
-          for i in {1..20}; do
-            if mysqladmin ping -hmysql -uroot -p"${{ secrets.DB_ROOT_PASSWORD }}" --silent; then
-              echo "MySQL is ready"
-              break
-            fi
-            echo "Waiting for MySQL..."
-            sleep 5
-          done
-      - name: Wait for Redis
-        run: |
-          for i in {1..20}; do
-            if nc -z redis 6379; then
-              echo "Redis is ready"
-              break
-            fi
-            echo "Waiting for Redis..."
-            sleep 2
-          done
-
       - name: Run tests
         run: |
           cd src 
