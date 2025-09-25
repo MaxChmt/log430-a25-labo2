@@ -6,47 +6,38 @@ on:
   pull_request:
 
 jobs:
-  build:
+  test:
     runs-on: ubuntu-latest
     services:
       mysql:
         image: mysql:8
         env:
-          MYSQL_ROOT_PASSWORD: ${{ secrets.MYSQL_ROOT_PASSWORD }}
-          MYSQL_DATABASE: mydb
-          MYSQL_USER: user
-          MYSQL_PASSWORD: ${{ secrets.DB_PASSWORD }}
-        ports:
-          - 3306:3306
+          MYSQL_ROOT_PASSWORD: ${{ secrets.DB_ROOT_PASSWORD }}
+          MYSQL_DATABASE: labo02_db
+          MYSQL_USER: labo02
+          MYSQL_PASSWORD: ${{ secrets.DB_PASS }}
         options: >-
-          --health-cmd="mysqladmin ping -h localhost -uroot -p$MYSQL_ROOT_PASSWORD --silent"
+          --health-cmd="mysqladmin ping -uroot -p${DB_ROOT_PASSWORD} --silent"
           --health-interval=10s
           --health-timeout=5s
           --health-retries=10
+
 
       redis:
         image: redis:7
         ports:
           - 6379:6379
-        options: >-
-          --health-cmd="redis-cli ping"
-          --health-interval=10s
-          --health-timeout=5s
-          --health-retries=5
 
     steps:
       - uses: actions/checkout@v4
-
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
           python-version: '3.11'
-
-      - name: Install Python dependencies
+      - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
-          pip install pytest
 
       - name: Creer fichier .env
         run: |
@@ -63,25 +54,30 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y mysql-client
-        
-      - name: Wait for MySQL to be ready
+
+
+      - name: Wait for MySQL
         run: |
           for i in {1..20}; do
-            if mysqladmin ping --protocol=tcp -h 127.0.0.1 -uroot -proot --silent; then
+            if mysqladmin ping -hmysql -uroot -p"${{ secrets.DB_ROOT_PASSWORD }}" --silent; then
               echo "MySQL is ready"
-              exit 0
+              break
             fi
-            echo "Waiting for MySQL (attempt $i)..."
+            echo "Waiting for MySQL..."
             sleep 5
           done
-          echo "MySQL did not become ready in time" >&2
-          exit 1
-
-      - name: Initialize database schema
+      - name: Wait for Redis
         run: |
-          mysql --protocol=tcp -h 127.0.0.1 -uroot -proot mydb < db-init/init.sql
+          for i in {1..20}; do
+            if nc -z redis 6379; then
+              echo "Redis is ready"
+              break
+            fi
+            echo "Waiting for Redis..."
+            sleep 2
+          done
 
       - name: Run tests
         run: |
-          cd src
-          python3 -m pytest -v
+          cd src 
+          python3 -m pytest 
