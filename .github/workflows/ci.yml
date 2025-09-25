@@ -8,7 +8,7 @@ on:
 jobs:
   test:
     runs-on: ubuntu-latest
-    container: existenz/builder:8.0
+
     services:
       mysql:
         image: mysql:8
@@ -17,11 +17,6 @@ jobs:
           MYSQL_DATABASE: labo02_db
           MYSQL_USER: labo02
           MYSQL_PASSWORD: ${{ secrets.DB_PASS }}
-        options: >-
-          --health-cmd="mysqladmin ping -uroot -p$MYSQL_ROOT_PASSWORD --silent"
-          --health-interval=10s
-          --health-timeout=5s
-          --health-retries=10
 
       redis:
         image: redis:7
@@ -55,9 +50,17 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y mysql-client
 
-      - name: Wait for services
-        run: sleep 15
-
+      - name: Wait for MySQL to be ready
+        run: |
+          for i in {1..30}; do
+            mysql -hmysql -ulabo02 -p${{ secrets.DB_PASS }} -e "SELECT 1" && break
+            echo "Waiting for MySQL..."
+            sleep 2
+          done
+          
+      - name: Check MySQL connectivity
+        run: mysql -hmysql -ulabo02 -p${{ secrets.DB_PASS }} -e "SHOW DATABASES;"
+        
       - name: Run tests
         run: |
           cd src
