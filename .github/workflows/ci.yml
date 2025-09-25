@@ -17,7 +17,7 @@ jobs:
           MYSQL_USER: labo02
           MYSQL_PASSWORD: ${{ secrets.DB_PASS }}
         options: >-
-          --health-cmd="mysqladmin ping -uroot -p${DB_ROOT_PASSWORD} --silent"
+          --health-cmd="mysqladmin ping -uroot -p$MYSQL_ROOT_PASSWORD --silent"
           --health-interval=10s
           --health-timeout=5s
           --health-retries=10
@@ -55,17 +55,12 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y mysql-client
 
-      - name: Wait for Redis
+      - name: Wait for services
         run: |
-          for i in {1..20}; do
-            if nc -z redis 6379; then
-              echo "Redis is ready"
-              break
-            fi
-            echo "Waiting for Redis..."
-            sleep 2
-          done
+          echo "Attente MySQL et Redis..."
+          sleep 15
 
+          
       - name: Run tests
         run: |
           cd src 
