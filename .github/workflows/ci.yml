@@ -98,4 +98,5 @@ jobs:
 
       - name: Run deployment script
         run: |
+          chmod +x deploy.sh
           bash deploy.sh
