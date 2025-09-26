@@ -96,8 +96,10 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
-          
+
       - name: Run deployment script
+        env:
+          DB_ROOT_PASSWORD: ${{ secrets.DB_ROOT_PASSWORD }}
         run: |
           chmod +x deploy.sh
           bash deploy.sh
